@@ -1,40 +1,38 @@
-// Karakterler ve aile ilişkileri
-const characters = {
-  said: { name: "Said", role: "torun", relatives: ["haci_abdullah","kerem","ahmet","omer","mahmut","mervan","faruk"] },
-  haci_abdullah: { name: "Hacı Abdullah", role: "dede", relatives: ["said","kerem"] },
-  kerem: { name: "Kerem", role: "baba", relatives: ["said","ahmet"] },
-  ahmet: { name: "Ahmet", role: "kuzen", relatives: ["said","kerem"] },
-  omer: { name: "Ömer", role: "teyzeoğlu", relatives: ["said"] },
-  mahmut: { name: "Mahmut", role: "teyzeoğlu", relatives: ["said"] },
-  mervan: { name: "Mervan", role: "halaoğlu", relatives: ["said"] },
-  faruk: { name: "Faruk", role: "amca", relatives: ["said"] }
-};
+import express from "express";
+import OpenAI from "openai";
+import cors from "cors";
 
-// Backend üzerinden AI cevabı alma
-async function getAIResponse(userInput) {
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userInput })
-  });
-  const data = await response.json();
-  return data.reply;
-}
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Chat handler
-const form = document.getElementById("chat-form");
-const input = document.getElementById("chat-input");
-const chatBox = document.getElementById("chat-box");
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
 
-  chatBox.innerHTML += `<div><b>Kullanıcı:</b> ${userMessage}</div>`;
-  input.value = "";
+  const prompt = `
+Said'in babası Kerem, dedesi Hacı Abdullah, kuzeni Ahmet, teyze oğlu Ömer, teyze oğlu Mahmut, hala oğlu Mervan, amcası Faruk.
+Kullanıcı: "${message}"
+Said ve ailesi sırayla cevap versin, her karakter kendi kişiliğine göre konuşsun.
+Yanıtları Türkçe ver ve kısa, doğal bir aile sohbeti gibi olsun.
+Format: Karakter: Mesaj
+`;
 
-  const aiReply = await getAIResponse(userMessage);
-  chatBox.innerHTML += `<div><b>Aile:</b> ${aiReply.replace(/\n/g, "<br>")}</div>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300
+    });
+
+    const reply = completion.choices[0].message.content;
+    res.json({ reply });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "OpenAI hatası" });
+  }
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server ${PORT} portunda çalışıyor`));
