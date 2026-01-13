@@ -1,0 +1,14 @@
+{
+  "name": "said-aile-bot",
+  "version": "1.0.0",
+  "main": "api/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "openai": "^4.10.0",
+    "cors": "^2.8.5"
+  }
+}
