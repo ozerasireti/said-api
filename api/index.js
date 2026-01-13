@@ -1,18 +1,19 @@
+import express from "express";
 import OpenAI from "openai";
+import cors from "cors";
+
+const app = express();
+app.use(cors()); // frontend’den gelen isteklere izin verir
+app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY // Render ortamında gizli
 });
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
 
   const prompt = `
-Ailenin sohbete başlaması gerekiyor.
 Said'in babası Kerem, dedesi Hacı Abdullah, kuzeni Ahmet, teyze oğlu Ömer, teyze oğlu Mahmut, hala oğlu Mervan, amcası Faruk.
 Kullanıcı: "${message}"
 Said ve ailesi sırayla cevap versin, her karakter kendi kişiliğine göre konuşsun.
@@ -33,4 +34,7 @@ Format: Karakter: Mesaj
     console.error(err);
     res.status(500).json({ error: "OpenAI hatası" });
   }
-}
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server ${PORT} portunda çalışıyor`));
